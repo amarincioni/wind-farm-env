@@ -339,6 +339,7 @@ class WindFarmEnv(Env):
         self.load_pyglet_visualization = load_pyglet_visualization
         if self.load_pyglet_visualization:
             from .farm_visualization import FarmVisualization
+            self.FarmVisualization = FarmVisualization
 
     @property
     def turbines(self) -> List[floris.simulation.Turbine]:
@@ -550,7 +551,7 @@ class WindFarmEnv(Env):
             return None
 
         if self.visualization is None:
-            self.visualization = FarmVisualization(self.floris_interface)
+            self.visualization = self.FarmVisualization(self.floris_interface)
 
         return self.visualization.render(return_rgb_array=mode == 'rgb_array')
 
