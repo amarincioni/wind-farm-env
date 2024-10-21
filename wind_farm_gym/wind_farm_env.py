@@ -11,7 +11,7 @@ from gymnasium.spaces import Box, Discrete
 import numpy as np
 import os
 
-from .farm_visualization import FarmVisualization
+#from .farm_visualization import FarmVisualization
 from .wind_process import WindProcess, MVGaussianNoiseProcess
 
 # When normalizing the state vector to [0, 1], we need to know the boundaries for the atmospheric conditions.
@@ -58,7 +58,8 @@ class WindFarmEnv(Env):
             random_reset=False,
             action_representation: Literal['wind', 'absolute', 'yaw'] = 'wind',
             perturbed_observations: Optional[Union[str, int, Tuple[int, ...]]] = None,
-            perturbation_scale: float = 0.05
+            perturbation_scale: float = 0.05,
+            load_pyglet_visualization: bool = False,
     ):
         """
         Initialize an instance of WindFarmEnv.
@@ -335,6 +336,10 @@ class WindFarmEnv(Env):
         self.visualization = None
         self.state = self._get_state()
 
+        self.load_pyglet_visualization = load_pyglet_visualization
+        if self.load_pyglet_visualization:
+            from .farm_visualization import FarmVisualization
+
     @property
     def turbines(self) -> List[floris.simulation.Turbine]:
         """
@@ -538,6 +543,8 @@ class WindFarmEnv(Env):
 
     # Implementing a method from the base class. This method renders the environment for the user.
     def render(self, mode='human'):
+        
+        assert self.load_pyglet_visualization, "Visualization is disabled, pyglet is not loaded"
 
         if self.state is None:
             return None
