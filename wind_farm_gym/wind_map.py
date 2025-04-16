@@ -47,7 +47,7 @@ class WindMap(Sprite):
         img = self.find_image(cut_plane, turbines_raw_data, wind_direction, flow_points, observation_points)
         super().__init__(img)
 
-    def find_image(self, cut_plane, turbines_raw_data=None, wind_direction=None, flow_points=None, observation_points=None):
+    def find_image(self, cut_plane, turbines_raw_data=None, wind_direction=None, flow_points=None, observation_points=None, display_metrics=True):
         self.clear()
         ft.visualization.visualize_cut_plane(cut_plane, self.ax, self.min_wind_speed, self.max_wind_speed,
                                              self.color_map)
@@ -68,33 +68,36 @@ class WindMap(Sprite):
             self.ax.text(coordinates.x1-70, coordinates.x2-50, f'T{i}', fontsize=8, color='black', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.1'))
             
             turbine_info_position = (int(self.bounds[0][1]/2 + 20), self.bounds[1][1])
-            # Show list of turbines with their power
-            self.ax.text(turbine_info_position[0], turbine_info_position[1]-35*(i+1), f'T{i}: {power/1e6:.2f}MW', fontsize=8, color='black')
-            # Add bar for power
-            self.ax.plot([int(self.bounds[0][1]/2)+200, int(self.bounds[0][1]/2)+200 + power/1e6*40], [10 + self.bounds[1][1] - 35*(i+1)]*2, 'black', lw=4)
             
-            # Add power to logs
-            self.power_history[i].append(power/1e6)
-            self.power_history[i] = self.power_history[i][-self.power_history_max_length:]
+            if display_metrics:
+                # Show list of turbines with their power
+                self.ax.text(turbine_info_position[0], turbine_info_position[1]-35*(i+1), f'T{i}: {power/1e6:.2f}MW', fontsize=8, color='black')
+                # Add bar for power
+                self.ax.plot([int(self.bounds[0][1]/2)+200, int(self.bounds[0][1]/2)+200 + power/1e6*40], [10 + self.bounds[1][1] - 35*(i+1)]*2, 'black', lw=4)
+                
+                # Add power to logs
+                self.power_history[i].append(power/1e6)
+                self.power_history[i] = self.power_history[i][-self.power_history_max_length:]
 
-        # Plot power history of all turbines
-        # Plot rectangle filled
-        self.ax.fill_between([
-            int(self.bounds[0][1]/2 + self.power_history_padding), 
-            int(self.bounds[0][1] - self.power_history_padding)], 
-            [self.bounds[1][1] - self.power_plt_y_offset]*2, [self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height]*2, color='gray', alpha=0.5)
-        # Plot y axis
-        self.ax.plot([int(self.bounds[0][1]/2 + self.power_history_padding)]*2, [self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height, self.bounds[1][1] - self.power_plt_y_offset], 'black', lw=2)
-        # Plot y axis values
-        self.ax.text(int(self.bounds[0][1]/2 + self.power_history_padding), self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height - 20, '0MW', fontsize=8, color='black')
-        self.ax.text(int(self.bounds[0][1]/2 + self.power_history_padding), self.bounds[1][1] - self.power_plt_y_offset + 10, f'{self.max_power}MW', fontsize=8, color='black')
-        
-        for i, power_history in self.power_history.items():
-            box_len = int(self.bounds[0][1]/2 - 2*self.power_history_padding)
-            x = np.arange(len(power_history))*int(box_len/self.power_history_max_length) + int(self.bounds[0][1]/2+self.power_history_padding)
-            y = np.array(power_history)/self.max_power*self.power_plt_height + self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height
-            self.ax.plot(x, y, label=f'Turbine {i}')
-        self.ax.legend(loc='upper right') 
+        if display_metrics:
+            # Plot power history of all turbines
+            # Plot rectangle filled
+            self.ax.fill_between([
+                int(self.bounds[0][1]/2 + self.power_history_padding), 
+                int(self.bounds[0][1] - self.power_history_padding)], 
+                [self.bounds[1][1] - self.power_plt_y_offset]*2, [self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height]*2, color='gray', alpha=0.5)
+            # Plot y axis
+            self.ax.plot([int(self.bounds[0][1]/2 + self.power_history_padding)]*2, [self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height, self.bounds[1][1] - self.power_plt_y_offset], 'black', lw=2)
+            # Plot y axis values
+            self.ax.text(int(self.bounds[0][1]/2 + self.power_history_padding), self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height - 20, '0MW', fontsize=8, color='black')
+            self.ax.text(int(self.bounds[0][1]/2 + self.power_history_padding), self.bounds[1][1] - self.power_plt_y_offset + 10, f'{self.max_power}MW', fontsize=8, color='black')
+            
+            for i, power_history in self.power_history.items():
+                box_len = int(self.bounds[0][1]/2 - 2*self.power_history_padding)
+                x = np.arange(len(power_history))*int(box_len/self.power_history_max_length) + int(self.bounds[0][1]/2+self.power_history_padding)
+                y = np.array(power_history)/self.max_power*self.power_plt_height + self.bounds[1][1] - self.power_plt_y_offset - self.power_plt_height
+                self.ax.plot(x, y, label=f'Turbine {i}')
+            self.ax.legend(loc='upper right') 
 
         lc = LineCollection(lines, color="black", lw=4)
         self.ax.add_collection(lc)
@@ -113,14 +116,14 @@ class WindMap(Sprite):
             self.ax.plot([self.windfarm_info["bounds"][1][0] + self.windfarm_info["margin"], self.windfarm_info["bounds"][1][0] + self.windfarm_info["margin"]], [self.windfarm_info["bounds"][0][1] - self.windfarm_info["margin"], self.windfarm_info["bounds"][1][1] + self.windfarm_info["margin"]], 'black', lw=2, alpha=0.2)
 
         # Add observation points
-        if observation_points is not None:
+        if observation_points is not None and len(observation_points) > 0:
             x, y = observation_points["x"], observation_points["y"]
             u = observation_points["u"]
             self.ax.scatter(x, y, c=u, cmap='viridis', s=60)
 
             # Plot current timestep
             t = observation_points["t"].max()
-            self.ax.text(self.bounds[0][0] + 10, self.bounds[1][1] - 10, f'Timestep: {t}', fontsize=8, color='black')
+            self.ax.text(self.bounds[0][0] + 10, self.bounds[1][1] - 10, f'Timestep: {t+1}', fontsize=8, color='black')
 
             # for each turbine, plot only the observation points behind it
             # circle them according to the turbine id
@@ -173,8 +176,8 @@ class WindMap(Sprite):
         height = size[1]
         return pyglet.image.ImageData(width, height, 'RGBA', raw_data, -4 * width)
 
-    def update_image(self, cut_plane, turbines_raw_data=None, wind_direction=None, flow_points=None, observation_points=None):
-        self.image = self.find_image(cut_plane, turbines_raw_data, wind_direction, flow_points, observation_points)
+    def update_image(self, cut_plane, turbines_raw_data=None, wind_direction=None, flow_points=None, observation_points=None, display_metrics=True):
+        self.image = self.find_image(cut_plane, turbines_raw_data, wind_direction, flow_points, observation_points, display_metrics)
 
     def render(self):
         self.draw()

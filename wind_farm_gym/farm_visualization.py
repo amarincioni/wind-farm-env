@@ -97,7 +97,7 @@ class FarmVisualization:
                                                      y_bounds=self.y_bounds,
                                                      height=self._hub_height)
 
-    def render(self, return_rgb_array=False, wind_state=None, observation_points=None, turbine_power=None):
+    def render(self, return_rgb_array=False, wind_state=None, observation_points=None, turbine_power=None, display_metrics=True):
         # Get cut plane
         cut_plane = self.get_cut_plane()
         # If we want to plot our own wind state, overwrite the one from the floris interface
@@ -116,7 +116,7 @@ class FarmVisualization:
             for coordinates, turbine
             in self._floris_interface.floris.farm.flow_field.turbine_map.items
         ]
-        if turbine_power is not None:
+        if turbine_power is not None and len(turbine_power) > 0:
             turbines_raw_data = [(d[0], d[1], d[2], turbine_power[i]) for i, d in enumerate(turbines_raw_data)]
         if self.wind_map is None:
             self.wind_map = WindMap((self.plot_width, self.plot_height), self.dpi, cut_plane, turbines_raw_data,
@@ -127,7 +127,7 @@ class FarmVisualization:
             self.wind_map.scale_y = self.viewer_height / self.wind_map.height
             self.viewer.add_geom(self.wind_map)
         else:
-            self.wind_map.update_image(cut_plane, turbines_raw_data, wind_direction, self.flow_points, observation_points)
+            self.wind_map.update_image(cut_plane, turbines_raw_data, wind_direction, self.flow_points, observation_points, display_metrics=display_metrics)
 
         return self.viewer.render(return_rgb_array)
 
